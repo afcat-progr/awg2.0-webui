@@ -46,10 +46,10 @@ def _parse_server_form(form) -> ServerCreate:
         jmax=int(form.get("jmax") or 70),
         s1=int(form.get("s1") or 0),
         s2=int(form.get("s2") or 0),
-        h1=int(form.get("h1") or 1148506570),
-        h2=int(form.get("h2") or 1820040150),
-        h3=int(form.get("h3") or 1377490607),
-        h4=int(form.get("h4") or 1973755675),
+        h1=(form.get("h1") or "1148506570").strip(),
+        h2=(form.get("h2") or "1820040150").strip(),
+        h3=(form.get("h3") or "1377490607").strip(),
+        h4=(form.get("h4") or "1973755675").strip(),
     )
 
 

@@ -63,9 +63,11 @@
     <div class="hint" style="margin-bottom:14px;">
       Эти параметры маскируют трафик. На клиенте они должны совпадать с сервером —
       панель пропишет их в каждый конфиг автоматически.<br>
-      ⚠️ <b>H1–H4</b> должны быть большими и <b>уникальными</b> числами (5…2147483647).
-      Маленькие значения (1,2,3,4) ломают handshake — клиент зависнет на «Connecting…».
-      <button type="button" class="btn small" style="margin-top:8px;" onclick="randomHeaders()">🎲 Случайные H1–H4</button>
+      ⚠️ <b>H1–H4</b> — magic headers AmneziaWG 2.0. Можно одно число (<code>1234</code>)
+      или диапазон (<code>123-456</code>). Значения 5…2147483647, <b>не должны
+      пересекаться</b> между собой. Маленькие/пересекающиеся ломают handshake
+      (клиент зависнет на «Connecting…»).
+      <button type="button" class="btn small" style="margin-top:8px;" onclick="randomHeaders()">🎲 Сгенерировать H1–H4</button>
     </div>
     <div class="row3">
       <div class="field"><label>Jc (кол-во junk-пакетов)</label><input name="jc" type="number" min="1" value="{{ val('jc', '4') }}"></div>
@@ -77,24 +79,27 @@
       <div class="field"><label>S2 (response junk size)</label><input name="s2" type="number" min="0" max="1188" value="{{ val('s2', '0') }}"><div class="hint">S1 + 56 ≠ S2</div></div>
     </div>
     <div class="row2">
-      <div class="field"><label>H1 (init magic header)</label><input name="h1" type="number" min="5" value="{{ val('h1', '1148506570') }}"></div>
-      <div class="field"><label>H2 (response magic header)</label><input name="h2" type="number" min="5" value="{{ val('h2', '1820040150') }}"></div>
+      <div class="field"><label>H1 (init message)</label><input name="h1" type="text" pattern="\d+(-\d+)?" value="{{ val('h1', '1148506570') }}"></div>
+      <div class="field"><label>H2 (response message)</label><input name="h2" type="text" pattern="\d+(-\d+)?" value="{{ val('h2', '1820040150') }}"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>H3 (underload magic header)</label><input name="h3" type="number" min="5" value="{{ val('h3', '1377490607') }}"></div>
-      <div class="field"><label>H4 (transport magic header)</label><input name="h4" type="number" min="5" value="{{ val('h4', '1973755675') }}"></div>
+      <div class="field"><label>H3 (cookie message)</label><input name="h3" type="text" pattern="\d+(-\d+)?" value="{{ val('h3', '1377490607') }}"></div>
+      <div class="field"><label>H4 (transport message)</label><input name="h4" type="text" pattern="\d+(-\d+)?" value="{{ val('h4', '1973755675') }}"></div>
     </div>
   </fieldset>
 
   <script>
   function randomHeaders() {
-    const used = new Set();
-    for (const id of ['h1','h2','h3','h4']) {
-      let v;
-      do { v = Math.floor(Math.random() * (2147483647 - 5) + 5); } while (used.has(v));
-      used.add(v);
-      document.querySelector(`input[name="${id}"]`).value = v;
+    // Generate 4 non-overlapping single uint32 values, well spaced apart.
+    const MIN = 100000000, MAX = 2147483000;
+    const vals = [];
+    while (vals.length < 4) {
+      const v = Math.floor(Math.random() * (MAX - MIN) + MIN);
+      if (vals.every(x => Math.abs(x - v) > 1000)) vals.push(v);
     }
+    ['h1','h2','h3','h4'].forEach((id, i) => {
+      document.querySelector(`input[name="${id}"]`).value = vals[i];
+    });
   }
   </script>
 

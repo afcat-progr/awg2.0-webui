@@ -67,11 +67,14 @@ class Server(Base):
     jmax: Mapped[int] = mapped_column(Integer, default=70)    # junk packet max size
     s1: Mapped[int] = mapped_column(Integer, default=0)       # init packet junk size
     s2: Mapped[int] = mapped_column(Integer, default=0)       # response packet junk size
-    # H1-H4 must be large UNIQUE 32-bit values; small values break the handshake.
-    h1: Mapped[int] = mapped_column(Integer, default=1148506570)   # init packet magic header
-    h2: Mapped[int] = mapped_column(Integer, default=1820040150)   # response packet magic header
-    h3: Mapped[int] = mapped_column(Integer, default=1377490607)   # underload packet magic header
-    h4: Mapped[int] = mapped_column(Integer, default=1973755675)   # transport packet magic header
+    # H1-H4 are magic headers. AmneziaWG 2.0 accepts either a single uint32 value
+    # ("1234") or a range ("123-456"). Stored as strings to support both. They
+    # must be large, UNIQUE, non-overlapping; small/overlapping values break the
+    # handshake (client hangs on "Connecting...").
+    h1: Mapped[str] = mapped_column(String(32), default="1148506570")  # init message
+    h2: Mapped[str] = mapped_column(String(32), default="1820040150")  # response message
+    h3: Mapped[str] = mapped_column(String(32), default="1377490607")  # cookie message
+    h4: Mapped[str] = mapped_column(String(32), default="1973755675")  # transport message
 
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
