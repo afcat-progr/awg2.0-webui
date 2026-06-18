@@ -6,12 +6,11 @@ services:
     restart: unless-stopped
 
     # NET_ADMIN lets the container create/configure the AWG interfaces.
+    # sysctls are NOT allowed with network_mode: host — ip_forward is set
+    # by entrypoint.sh via sysctl at runtime instead.
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    sysctls:
-      - net.ipv4.ip_forward=1
-      - net.ipv6.conf.all.forwarding=1
 
     # Host networking so the WireGuard UDP ports and the kernel interfaces are
     # shared with the VPS. With network_mode: host the published port below is
