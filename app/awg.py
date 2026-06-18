@@ -198,10 +198,12 @@ def apply_server(server: Server) -> tuple[bool, str]:
     if not server.enabled:
         return down_server(server)
 
+    conf = str(config_path(server))
+
     # If already up, hot-reload with syncconf; otherwise bring it up.
     is_up, _ = _run([settings.wg_bin, "show", server.name])
     if is_up:
-        ok, msg = _run([settings.wg_quick_bin, "strip", server.name])
+        ok, msg = _run([settings.wg_quick_bin, "strip", conf])
         # strip prints a stripped config to stdout; feed it to syncconf via a temp file
         if ok:
             strip_path = config_path(server).with_suffix(".stripped")
@@ -210,13 +212,15 @@ def apply_server(server: Server) -> tuple[bool, str]:
             strip_path.unlink(missing_ok=True)
             return ok, sync or "synced"
         return ok, msg
-    return _run([settings.wg_quick_bin, "up", server.name])
+    # Pass full path so awg-quick doesn't need /etc/wireguard/ lookup.
+    return _run([settings.wg_quick_bin, "up", conf])
 
 
 def down_server(server: Server) -> tuple[bool, str]:
     if not settings.apply_to_system:
         return True, "apply_to_system disabled."
-    return _run([settings.wg_quick_bin, "down", server.name])
+    conf = str(config_path(server))
+    return _run([settings.wg_quick_bin, "down", conf])
 
 
 def remove_server(server: Server) -> None:

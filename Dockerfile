@@ -13,17 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         iproute2 iptables openresolv procps ca-certificates curl gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install AmneziaWG userspace tools.
-# The official packages live in the AmneziaWG PPA / repo. We pull the prebuilt
-# tools; if your base differs, see README for alternatives.
+# Install plain wireguard-tools as a build-time fallback for wg-quick.
+# The real awg / awg-quick binaries are bind-mounted from the host at runtime
+# (see docker-compose.yml). The fallback symlinks are only created if the
+# real binaries are absent (development / testing without AmneziaWG).
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends wireguard-tools || true; \
-    # Provide awg/awg-quick as wrappers if amneziawg-tools are mounted from host;
-    # otherwise fall back to wg/wg-quick (plain WireGuard) for testing.
-    if [ ! -e /usr/bin/awg ]; then ln -sf /usr/bin/wg /usr/local/bin/awg || true; fi; \
-    if [ ! -e /usr/bin/awg-quick ]; then ln -sf /usr/bin/wg-quick /usr/local/bin/awg-quick || true; fi; \
     rm -rf /var/lib/apt/lists/*
+
+# awg-quick looks for configs in /etc/wireguard/ by default, but we store them
+# in /etc/amnezia/amneziawg/. Symlink so both paths work.
+RUN mkdir -p /etc/amnezia/amneziawg \
+    && ln -sf /etc/amnezia/amneziawg /etc/wireguard
 
 WORKDIR /app
 COPY requirements.txt .

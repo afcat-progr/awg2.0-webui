@@ -38,8 +38,10 @@ services:
       - /etc/amnezia/amneziawg:/etc/amnezia/amneziawg
       # Kernel modules from the host so the awg kernel module can be loaded.
       - /lib/modules:/lib/modules:ro
-      # To use the host's real AmneziaWG binaries instead of the image fallback,
-      # copy docker-compose.override.yml.example -> docker-compose.override.yml.
+      # Host AmneziaWG binaries — required for real awg support.
+      # If your host has them at a different path, adjust accordingly.
+      - /usr/bin/awg:/usr/bin/awg:ro
+      - /usr/bin/awg-quick:/usr/bin/awg-quick:ro
 
 volumes:
   awg-data:
