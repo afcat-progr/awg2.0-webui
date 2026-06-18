@@ -8,7 +8,12 @@ _IFACE_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_-]{0,14}$")
 # A magic header: either a single uint32 ("1234") or a range ("123-456").
 _HEADER_RE = re.compile(r"^\s*(\d+)\s*(?:-\s*(\d+)\s*)?$")
 _U32_MAX = 2147483647  # AmneziaWG uses values up to 2^31-1
-_HEADER_MIN = 5        # values below this are silently mangled / break handshake
+# Magic headers MUST be large. Types 1-4 are reserved by WireGuard, and small
+# values are silently mangled by awg-quick (e.g. 333 -> 3355443), which makes
+# the client config disagree with the running interface and breaks the
+# handshake. AmneziaWG itself generates headers in the 0x10000000..0x7FFFFFFF
+# range, so we require a large minimum.
+_HEADER_MIN = 268435456  # 2^28
 
 
 def _header_bounds(value: str) -> tuple[int, int]:
@@ -18,13 +23,17 @@ def _header_bounds(value: str) -> tuple[int, int]:
     """
     m = _HEADER_RE.match(value or "")
     if not m:
-        raise ValueError(f"Неверный формат заголовка «{value}». Используйте число (1234) или диапазон (123-456).")
+        raise ValueError(f"Неверный формат заголовка «{value}». Используйте число (например 1148506570) или диапазон (1000000-2000000).")
     low = int(m.group(1))
     high = int(m.group(2)) if m.group(2) is not None else low
     if low > high:
         raise ValueError(f"В диапазоне «{value}» левая граница больше правой.")
     if low < _HEADER_MIN or high > _U32_MAX:
-        raise ValueError(f"Значения заголовка должны быть в диапазоне {_HEADER_MIN}…{_U32_MAX} (получено «{value}»).")
+        raise ValueError(
+            f"H1–H4 должны быть большими: {_HEADER_MIN}…{_U32_MAX}. "
+            f"Маленькие значения (123, 333…) AmneziaWG искажает и handshake ломается. "
+            f"Получено «{value}». Нажмите «Сгенерировать H1–H4»."
+        )
     return low, high
 
 

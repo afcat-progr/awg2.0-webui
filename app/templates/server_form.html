@@ -63,10 +63,12 @@
     <div class="hint" style="margin-bottom:14px;">
       Эти параметры маскируют трафик. На клиенте они должны совпадать с сервером —
       панель пропишет их в каждый конфиг автоматически.<br>
-      ⚠️ <b>H1–H4</b> — magic headers AmneziaWG 2.0. Можно одно число (<code>1234</code>)
-      или диапазон (<code>123-456</code>). Значения 5…2147483647, <b>не должны
-      пересекаться</b> между собой. Маленькие/пересекающиеся ломают handshake
-      (клиент зависнет на «Connecting…»).
+      ⚠️ <b>H1–H4</b> — magic headers AmneziaWG 2.0. Можно одно число
+      (<code>1148506570</code>) или диапазон (<code>1000000-2000000</code>).
+      <b>Значения должны быть БОЛЬШИМИ</b> (268435456…2147483647) и
+      <b>не пересекаться</b>. Маленькие (123, 333…) AmneziaWG искажает →
+      handshake ломается, клиент виснет на «Connecting…».
+      <b>Лучше просто нажми кнопку:</b>
       <button type="button" class="btn small" style="margin-top:8px;" onclick="randomHeaders()">🎲 Сгенерировать H1–H4</button>
     </div>
     <div class="row3">
@@ -90,8 +92,9 @@
 
   <script>
   function randomHeaders() {
-    // Generate 4 non-overlapping single uint32 values, well spaced apart.
-    const MIN = 100000000, MAX = 2147483000;
+    // Generate 4 non-overlapping single values in the LARGE range AmneziaWG
+    // requires (>= 2^28). Must match _HEADER_MIN in schemas.py.
+    const MIN = 500000000, MAX = 2147483000;
     const vals = [];
     while (vals.length < 4) {
       const v = Math.floor(Math.random() * (MAX - MIN) + MIN);
