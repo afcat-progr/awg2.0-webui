@@ -1,8 +1,10 @@
 __pycache__/
 *.pyc
 .venv/
+.venv-check/
 venv/
 .env
 *.db
 data/
 docker-compose.override.yml
+.claude/

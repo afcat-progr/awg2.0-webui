@@ -16,16 +16,20 @@ class ServerCreate(BaseModel):
     endpoint_host: str = ""
     wan_interface: str = "eth0"
 
-    # AWG obfuscation
-    jc: int = Field(4, ge=0, le=128)
+    # AWG obfuscation.
+    # H1-H4 must be large UNIQUE 32-bit values (>= 5). awg-quick silently
+    # mangles small values, which breaks the handshake. Defaults below match
+    # AmneziaWG-style random magic headers; they should differ per server but
+    # MUST be identical on client and server.
+    jc: int = Field(4, ge=1, le=128)
     jmin: int = Field(40, ge=0, le=1280)
-    jmax: int = Field(70, ge=0, le=1280)
-    s1: int = Field(0, ge=0, le=1280)
-    s2: int = Field(0, ge=0, le=1280)
-    h1: int = Field(1, ge=0)
-    h2: int = Field(2, ge=0)
-    h3: int = Field(3, ge=0)
-    h4: int = Field(4, ge=0)
+    jmax: int = Field(70, ge=1, le=1280)
+    s1: int = Field(0, ge=0, le=1132)
+    s2: int = Field(0, ge=0, le=1188)
+    h1: int = Field(1148506570, ge=5, le=2147483647)
+    h2: int = Field(1820040150, ge=5, le=2147483647)
+    h3: int = Field(1377490607, ge=5, le=2147483647)
+    h4: int = Field(1973755675, ge=5, le=2147483647)
 
     @field_validator("name")
     @classmethod
@@ -40,6 +44,25 @@ class ServerCreate(BaseModel):
         jmin = info.data.get("jmin", 0)
         if v < jmin:
             raise ValueError("Jmax must be >= Jmin.")
+        return v
+
+    @field_validator("s2")
+    @classmethod
+    def _s1_plus_56_ne_s2(cls, v: int, info) -> int:
+        # AmneziaWG hard rule: S1 + 56 must not equal S2.
+        s1 = info.data.get("s1", 0)
+        if s1 + 56 == v:
+            raise ValueError("Недопустимо: S1 + 56 не должно равняться S2.")
+        return v
+
+    @field_validator("h4")
+    @classmethod
+    def _headers_unique(cls, v: int, info) -> int:
+        # H1-H4 must all be distinct, otherwise the handshake fails.
+        hs = [info.data.get("h1"), info.data.get("h2"), info.data.get("h3"), v]
+        hs = [h for h in hs if h is not None]
+        if len(set(hs)) != len(hs):
+            raise ValueError("H1, H2, H3, H4 должны быть уникальными (все разные).")
         return v
 
 

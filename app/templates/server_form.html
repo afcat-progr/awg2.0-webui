@@ -62,26 +62,41 @@
     <legend>AmneziaWG 2.0 — обфускация</legend>
     <div class="hint" style="margin-bottom:14px;">
       Эти параметры маскируют трафик. На клиенте они должны совпадать с сервером —
-      панель пропишет их в каждый конфиг автоматически.
+      панель пропишет их в каждый конфиг автоматически.<br>
+      ⚠️ <b>H1–H4</b> должны быть большими и <b>уникальными</b> числами (5…2147483647).
+      Маленькие значения (1,2,3,4) ломают handshake — клиент зависнет на «Connecting…».
+      <button type="button" class="btn small" style="margin-top:8px;" onclick="randomHeaders()">🎲 Случайные H1–H4</button>
     </div>
     <div class="row3">
-      <div class="field"><label>Jc (кол-во junk-пакетов)</label><input name="jc" type="number" value="{{ val('jc', '4') }}"></div>
-      <div class="field"><label>Jmin</label><input name="jmin" type="number" value="{{ val('jmin', '40') }}"></div>
-      <div class="field"><label>Jmax</label><input name="jmax" type="number" value="{{ val('jmax', '70') }}"></div>
+      <div class="field"><label>Jc (кол-во junk-пакетов)</label><input name="jc" type="number" min="1" value="{{ val('jc', '4') }}"></div>
+      <div class="field"><label>Jmin</label><input name="jmin" type="number" min="0" value="{{ val('jmin', '40') }}"></div>
+      <div class="field"><label>Jmax</label><input name="jmax" type="number" min="1" value="{{ val('jmax', '70') }}"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>S1 (init junk size)</label><input name="s1" type="number" value="{{ val('s1', '0') }}"></div>
-      <div class="field"><label>S2 (response junk size)</label><input name="s2" type="number" value="{{ val('s2', '0') }}"></div>
+      <div class="field"><label>S1 (init junk size)</label><input name="s1" type="number" min="0" max="1132" value="{{ val('s1', '0') }}"></div>
+      <div class="field"><label>S2 (response junk size)</label><input name="s2" type="number" min="0" max="1188" value="{{ val('s2', '0') }}"><div class="hint">S1 + 56 ≠ S2</div></div>
     </div>
     <div class="row2">
-      <div class="field"><label>H1 (init magic header)</label><input name="h1" type="number" value="{{ val('h1', '1') }}"></div>
-      <div class="field"><label>H2 (response magic header)</label><input name="h2" type="number" value="{{ val('h2', '2') }}"></div>
+      <div class="field"><label>H1 (init magic header)</label><input name="h1" type="number" min="5" value="{{ val('h1', '1148506570') }}"></div>
+      <div class="field"><label>H2 (response magic header)</label><input name="h2" type="number" min="5" value="{{ val('h2', '1820040150') }}"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>H3 (underload magic header)</label><input name="h3" type="number" value="{{ val('h3', '3') }}"></div>
-      <div class="field"><label>H4 (transport magic header)</label><input name="h4" type="number" value="{{ val('h4', '4') }}"></div>
+      <div class="field"><label>H3 (underload magic header)</label><input name="h3" type="number" min="5" value="{{ val('h3', '1377490607') }}"></div>
+      <div class="field"><label>H4 (transport magic header)</label><input name="h4" type="number" min="5" value="{{ val('h4', '1973755675') }}"></div>
     </div>
   </fieldset>
+
+  <script>
+  function randomHeaders() {
+    const used = new Set();
+    for (const id of ['h1','h2','h3','h4']) {
+      let v;
+      do { v = Math.floor(Math.random() * (2147483647 - 5) + 5); } while (used.has(v));
+      used.add(v);
+      document.querySelector(`input[name="${id}"]`).value = v;
+    }
+  }
+  </script>
 
   {% if editing %}
   <div class="field checkbox">

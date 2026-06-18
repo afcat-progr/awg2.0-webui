@@ -67,10 +67,11 @@ class Server(Base):
     jmax: Mapped[int] = mapped_column(Integer, default=70)    # junk packet max size
     s1: Mapped[int] = mapped_column(Integer, default=0)       # init packet junk size
     s2: Mapped[int] = mapped_column(Integer, default=0)       # response packet junk size
-    h1: Mapped[int] = mapped_column(Integer, default=1)       # init packet magic header
-    h2: Mapped[int] = mapped_column(Integer, default=2)       # response packet magic header
-    h3: Mapped[int] = mapped_column(Integer, default=3)       # underload packet magic header
-    h4: Mapped[int] = mapped_column(Integer, default=4)       # transport packet magic header
+    # H1-H4 must be large UNIQUE 32-bit values; small values break the handshake.
+    h1: Mapped[int] = mapped_column(Integer, default=1148506570)   # init packet magic header
+    h2: Mapped[int] = mapped_column(Integer, default=1820040150)   # response packet magic header
+    h3: Mapped[int] = mapped_column(Integer, default=1377490607)   # underload packet magic header
+    h4: Mapped[int] = mapped_column(Integer, default=1973755675)   # transport packet magic header
 
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
