@@ -1,0 +1,45 @@
+services:
+  awg-webui:
+    build: .
+    image: awg-webui:latest
+    container_name: awg-webui
+    restart: unless-stopped
+
+    # NET_ADMIN lets the container create/configure the AWG interfaces.
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+
+    # Host networking so the WireGuard UDP ports and the kernel interfaces are
+    # shared with the VPS. With network_mode: host the published port below is
+    # ignored — the panel listens on PORT directly on the host.
+    network_mode: host
+
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      # Bind to localhost only: the panel is reachable solely via SSH tunnel.
+      HOST: 127.0.0.1
+      PORT: ${PORT:-8080}
+      DATABASE_URL: sqlite:////data/awgui.db
+      AWG_CONFIG_DIR: /etc/amnezia/amneziawg
+      PUBLIC_ENDPOINT: ${PUBLIC_ENDPOINT:-}
+      DEFAULT_DNS: ${DEFAULT_DNS:-1.1.1.1, 1.0.0.1}
+      WG_BIN: ${WG_BIN:-awg}
+      WG_QUICK_BIN: ${WG_QUICK_BIN:-awg-quick}
+      APPLY_TO_SYSTEM: ${APPLY_TO_SYSTEM:-1}
+
+    volumes:
+      - awg-data:/data
+      - /etc/amnezia/amneziawg:/etc/amnezia/amneziawg
+      # Kernel modules from the host so the awg kernel module can be loaded.
+      - /lib/modules:/lib/modules:ro
+      # To use the host's real AmneziaWG binaries instead of the image fallback,
+      # copy docker-compose.override.yml.example -> docker-compose.override.yml.
+
+volumes:
+  awg-data:

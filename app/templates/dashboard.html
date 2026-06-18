@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Серверы — AWG WebUI{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Серверы (интерфейсы)</h1>
+  <a href="/servers/new" class="btn primary">+ Новый сервер</a>
+</div>
+
+{% if not servers %}
+<div class="empty">
+  <div class="big">🌐</div>
+  <h2>Пока нет ни одного сервера</h2>
+  <p>Создайте первый AmneziaWG-интерфейс, чтобы начать раздавать конфиги.</p>
+  <a href="/servers/new" class="btn primary">Создать сервер</a>
+</div>
+{% else %}
+<div class="grid">
+  {% for s in servers %}
+  {% set st = statuses[s.id] %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+      <h3><a href="/servers/{{ s.id }}">{{ s.name }}</a></h3>
+      {% if not s.enabled %}
+        <span class="badge muted">выключен</span>
+      {% elif st.up == 'up' %}
+        <span class="badge up">● up</span>
+      {% elif st.up == 'down' %}
+        <span class="badge down">● down</span>
+      {% else %}
+        <span class="badge muted">?</span>
+      {% endif %}
+    </div>
+    <div class="meta">{{ s.description or "—" }}</div>
+    <div class="card-row"><span>Адрес</span><span class="mono">{{ s.address }}</span></div>
+    <div class="card-row"><span>Порт</span><span class="mono">{{ s.listen_port }}/udp</span></div>
+    <div class="card-row"><span>Клиентов</span><span>{{ s.peers|length }}</span></div>
+    <div class="btn-row" style="margin-top:14px;">
+      <a href="/servers/{{ s.id }}" class="btn small">Открыть</a>
+      <a href="/servers/{{ s.id }}/edit" class="btn small">Настройки</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

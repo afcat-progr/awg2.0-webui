@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ peer.name }} — конфиг{% endblock %}
+{% block content %}
+<div class="crumbs">
+  <a href="/">Серверы</a> / <a href="/servers/{{ peer.server_id }}">{{ peer.server.name }}</a> / {{ peer.name }}
+</div>
+<div class="page-head">
+  <h1>{{ peer.name }}
+    {% if peer.enabled %}<span class="badge up">вкл</span>{% else %}<span class="badge muted">выкл</span>{% endif %}
+  </h1>
+  <div class="btn-row">
+    <a href="/peers/{{ peer.id }}/config" class="btn primary">⬇ Скачать .conf</a>
+    <form method="post" action="/peers/{{ peer.id }}/delete" style="display:inline;"
+          onsubmit="return confirm('Удалить клиента {{ peer.name }}?');">
+      <button class="btn danger" type="submit">Удалить</button>
+    </form>
+  </div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="section-title">Конфиг клиента</div>
+    <pre class="config" id="cfg">{{ config }}</pre>
+    <button class="btn small" type="button" onclick="copyCfg()">📋 Скопировать</button>
+    <span id="copied" style="color:var(--green); margin-left:8px; display:none;">Скопировано</span>
+
+    <div class="section-title">Параметры</div>
+    <div class="card">
+      <div class="card-row"><span>IP</span><span class="mono">{{ peer.address }}</span></div>
+      <div class="card-row"><span>AllowedIPs</span><span class="mono">{{ peer.allowed_ips }}</span></div>
+      <div class="card-row"><span>DNS</span><span class="mono">{{ peer.dns or peer.server.dns or "—" }}</span></div>
+      <div class="card-row"><span>Keepalive</span><span class="mono">{{ peer.keepalive }}s</span></div>
+      <div class="card-row"><span>PresharedKey</span><span>{{ "да" if peer.preshared_key else "нет" }}</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-title">QR-код</div>
+    <div class="qr-box"><img src="{{ qr }}" alt="QR" width="240" height="240"></div>
+    <p class="hint" style="margin-top:10px;">Отсканируйте в приложении AmneziaWG на телефоне.</p>
+  </div>
+</div>
+
+<script>
+function copyCfg() {
+  const t = document.getElementById('cfg').innerText;
+  navigator.clipboard.writeText(t).then(() => {
+    const c = document.getElementById('copied');
+    c.style.display = 'inline';
+    setTimeout(() => c.style.display = 'none', 1500);
+  });
+}
+</script>
+{% endblock %}

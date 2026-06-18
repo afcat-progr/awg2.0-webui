@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ server.name }} — AWG WebUI{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Серверы</a> / {{ server.name }}</div>
+<div class="page-head">
+  <div>
+    <h1>{{ server.name }}
+      {% if not server.enabled %}<span class="badge muted">выключен</span>
+      {% elif status.up == 'up' %}<span class="badge up">● up</span>
+      {% elif status.up == 'down' %}<span class="badge down">● down</span>{% endif %}
+    </h1>
+    <div class="meta">{{ server.description or "" }}</div>
+  </div>
+  <div class="btn-row">
+    <a href="/servers/{{ server.id }}/edit" class="btn">Настройки</a>
+    <form method="post" action="/servers/{{ server.id }}/toggle" style="display:inline;">
+      <button class="btn" type="submit">{{ "Выключить" if server.enabled else "Включить" }}</button>
+    </form>
+    <form method="post" action="/servers/{{ server.id }}/delete" style="display:inline;"
+          onsubmit="return confirm('Удалить сервер {{ server.name }} и все его конфиги?');">
+      <button class="btn danger" type="submit">Удалить</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); margin-bottom:24px;">
+  <div class="card">
+    <div class="card-row"><span>Адрес</span><span class="mono">{{ server.address }}</span></div>
+    <div class="card-row"><span>Порт</span><span class="mono">{{ server.listen_port }}/udp</span></div>
+    <div class="card-row"><span>MTU</span><span class="mono">{{ server.mtu }}</span></div>
+    <div class="card-row"><span>Endpoint</span><span class="mono">{{ server.endpoint_host or "auto" }}</span></div>
+  </div>
+  <div class="card">
+    <div class="card-row"><span>Jc/Jmin/Jmax</span><span class="mono">{{ server.jc }}/{{ server.jmin }}/{{ server.jmax }}</span></div>
+    <div class="card-row"><span>S1/S2</span><span class="mono">{{ server.s1 }}/{{ server.s2 }}</span></div>
+    <div class="card-row"><span>H1..H4</span><span class="mono">{{ server.h1 }},{{ server.h2 }},{{ server.h3 }},{{ server.h4 }}</span></div>
+    <div class="card-row"><span>Pubkey</span><span class="mono">{{ server.public_key[:14] }}…</span></div>
+  </div>
+</div>
+
+<div class="btn-row" style="margin-bottom:24px;">
+  <a href="/servers/{{ server.id }}/config" class="btn small">⬇ Скачать {{ server.name }}.conf</a>
+</div>
+
+<!-- Add peer -->
+<div class="section-title">Добавить клиента</div>
+<div class="card" style="margin-bottom:28px;">
+  <form method="post" action="/servers/{{ server.id }}/peers">
+    <div class="row3">
+      <div class="field">
+        <label>Имя клиента</label>
+        <input name="name" placeholder="phone-ivan" required>
+      </div>
+      <div class="field">
+        <label>IP (пусто = авто)</label>
+        <input name="address" placeholder="авто из подсети">
+      </div>
+      <div class="field">
+        <label>Keepalive (сек)</label>
+        <input name="keepalive" type="number" value="25">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>AllowedIPs клиента</label>
+        <input name="allowed_ips" value="0.0.0.0/0, ::/0">
+        <div class="hint">Что заворачивать в туннель. 0.0.0.0/0 = весь трафик.</div>
+      </div>
+      <div class="field">
+        <label>DNS (пусто = серверный)</label>
+        <input name="dns" placeholder="{{ server.dns or '1.1.1.1' }}">
+      </div>
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="psk" name="use_preshared_key" checked>
+      <label for="psk" style="margin:0;">Использовать PresharedKey (доп. шифрование)</label>
+    </div>
+    <button class="btn primary" type="submit">+ Создать клиента</button>
+  </form>
+</div>
+
+<!-- Peers -->
+<div class="section-title">Клиенты ({{ server.peers|length }})</div>
+{% if not server.peers %}
+<div class="empty"><p>Пока нет клиентов. Добавьте первого выше.</p></div>
+{% else %}
+<div class="card" style="padding:0;">
+<table>
+  <thead><tr><th>Имя</th><th>IP</th><th>Статус</th><th>Публ. ключ</th><th></th></tr></thead>
+  <tbody>
+    {% for p in server.peers %}
+    <tr>
+      <td><a href="/peers/{{ p.id }}">{{ p.name }}</a></td>
+      <td class="mono">{{ p.address }}</td>
+      <td>{% if p.enabled %}<span class="badge up">вкл</span>{% else %}<span class="badge muted">выкл</span>{% endif %}</td>
+      <td class="mono">{{ p.public_key[:12] }}…</td>
+      <td>
+        <div class="btn-row" style="justify-content:flex-end;">
+          <a href="/peers/{{ p.id }}" class="btn small">QR / конфиг</a>
+          <form method="post" action="/peers/{{ p.id }}/toggle" style="display:inline;">
+            <button class="btn small" type="submit">{{ "выкл" if p.enabled else "вкл" }}</button>
+          </form>
+          <form method="post" action="/peers/{{ p.id }}/delete" style="display:inline;"
+                onsubmit="return confirm('Удалить клиента {{ p.name }}?');">
+            <button class="btn small danger" type="submit">✕</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% if status.dump %}
+<div class="section-title">awg show {{ server.name }}</div>
+<pre class="config">{{ status.dump }}</pre>
+{% endif %}
+{% endblock %}

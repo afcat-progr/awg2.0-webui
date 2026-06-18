@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% set editing = server is not none %}
+{% block title %}{{ "Настройки сервера" if editing else "Новый сервер" }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Серверы</a> / {{ server.name if editing else "Новый" }}</div>
+<div class="page-head"><h1>{{ "Настройки: " + server.name if editing else "Новый сервер" }}</h1></div>
+
+{% if errors %}<div class="alert error">{{ errors }}</div>{% endif %}
+
+{% macro val(field, default='') -%}
+{{ server[field] if editing else (form[field] if form is defined and form.get(field) is not none else default) }}
+{%- endmacro %}
+
+<form method="post" action="{{ '/servers/' ~ server.id ~ '/edit' if editing else '/servers' }}">
+  <fieldset>
+    <legend>Основное</legend>
+    <div class="row2">
+      <div class="field">
+        <label>Имя интерфейса</label>
+        <input name="name" value="{{ val('name', 'awg0') }}" {{ 'readonly' if editing }} required>
+        <div class="hint">Например awg0, awg1. {{ 'Менять нельзя после создания.' if editing }}</div>
+      </div>
+      <div class="field">
+        <label>Описание</label>
+        <input name="description" value="{{ val('description') }}">
+      </div>
+    </div>
+    <div class="row3">
+      <div class="field">
+        <label>Адрес интерфейса (CIDR)</label>
+        <input name="address" value="{{ val('address', '10.8.0.1/24') }}" required>
+        <div class="hint">Подсеть, из неё раздаются IP клиентам.</div>
+      </div>
+      <div class="field">
+        <label>UDP-порт</label>
+        <input name="listen_port" type="number" min="1" max="65535" value="{{ val('listen_port', '51820') }}" required>
+      </div>
+      <div class="field">
+        <label>MTU</label>
+        <input name="mtu" type="number" value="{{ val('mtu', '1420') }}">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>DNS для клиентов</label>
+        <input name="dns" value="{{ val('dns') }}" placeholder="1.1.1.1, 1.0.0.1">
+      </div>
+      <div class="field">
+        <label>Публичный Endpoint (хост/IP)</label>
+        <input name="endpoint_host" value="{{ val('endpoint_host') }}" placeholder="auto (определится автоматически)">
+        <div class="hint">Адрес, который пропишется клиентам. Пусто = автоопределение.</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>WAN-интерфейс (для NAT/MASQUERADE)</label>
+      <input name="wan_interface" value="{{ val('wan_interface', 'eth0') }}">
+      <div class="hint">Внешний интерфейс VPS (обычно eth0 или ens3).</div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>AmneziaWG 2.0 — обфускация</legend>
+    <div class="hint" style="margin-bottom:14px;">
+      Эти параметры маскируют трафик. На клиенте они должны совпадать с сервером —
+      панель пропишет их в каждый конфиг автоматически.
+    </div>
+    <div class="row3">
+      <div class="field"><label>Jc (кол-во junk-пакетов)</label><input name="jc" type="number" value="{{ val('jc', '4') }}"></div>
+      <div class="field"><label>Jmin</label><input name="jmin" type="number" value="{{ val('jmin', '40') }}"></div>
+      <div class="field"><label>Jmax</label><input name="jmax" type="number" value="{{ val('jmax', '70') }}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>S1 (init junk size)</label><input name="s1" type="number" value="{{ val('s1', '0') }}"></div>
+      <div class="field"><label>S2 (response junk size)</label><input name="s2" type="number" value="{{ val('s2', '0') }}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>H1 (init magic header)</label><input name="h1" type="number" value="{{ val('h1', '1') }}"></div>
+      <div class="field"><label>H2 (response magic header)</label><input name="h2" type="number" value="{{ val('h2', '2') }}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>H3 (underload magic header)</label><input name="h3" type="number" value="{{ val('h3', '3') }}"></div>
+      <div class="field"><label>H4 (transport magic header)</label><input name="h4" type="number" value="{{ val('h4', '4') }}"></div>
+    </div>
+  </fieldset>
+
+  {% if editing %}
+  <div class="field checkbox">
+    <input type="checkbox" id="enabled" name="enabled" {{ 'checked' if server.enabled }}>
+    <label for="enabled" style="margin:0;">Интерфейс включён</label>
+  </div>
+  {% endif %}
+
+  <div class="btn-row">
+    <button class="btn primary" type="submit">{{ "Сохранить" if editing else "Создать сервер" }}</button>
+    <a href="{{ '/servers/' ~ server.id if editing else '/' }}" class="btn">Отмена</a>
+  </div>
+</form>
+{% endblock %}

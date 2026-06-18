@@ -1,0 +1,8 @@
+# Normalize line endings. Shell scripts and Dockerfiles must keep LF so they
+# run correctly inside Linux containers regardless of the host OS.
+* text=auto eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

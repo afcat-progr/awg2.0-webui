@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход — AWG WebUI</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="card login-card">
+      <div class="brand"><span class="logo">🛡️</span> AWG WebUI</div>
+      {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+      <form method="post" action="/login">
+        <div class="field">
+          <label>Имя пользователя</label>
+          <input name="username" autofocus autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>Пароль</label>
+          <input name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn primary" style="width:100%" type="submit">Войти</button>
+      </form>
+      <p class="hint" style="margin-top:16px; text-align:center;">
+        Доступ только через SSH-туннель:<br>
+        <span class="mono">ssh -L 8080:localhost:8080 root@server</span>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

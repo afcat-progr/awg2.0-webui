@@ -1,0 +1,13 @@
+# Optional override: use the host's AmneziaWG binaries inside the container.
+# Use this when you've installed amneziawg-tools on the VPS host and want the
+# panel to call the exact same `awg` / `awg-quick`.
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   docker compose up -d --build
+#
+# Verify the host paths first:  which awg awg-quick
+services:
+  awg-webui:
+    volumes:
+      - /usr/bin/awg:/usr/bin/awg:ro
+      - /usr/bin/awg-quick:/usr/bin/awg-quick:ro
