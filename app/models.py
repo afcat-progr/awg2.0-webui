@@ -62,19 +62,20 @@ class Server(Base):
     post_down: Mapped[str] = mapped_column(Text, default="")
 
     # ---- AmneziaWG 2.0 obfuscation parameters ----
-    jc: Mapped[int] = mapped_column(Integer, default=4)       # junk packet count
-    jmin: Mapped[int] = mapped_column(Integer, default=40)    # junk packet min size
-    jmax: Mapped[int] = mapped_column(Integer, default=70)    # junk packet max size
-    s1: Mapped[int] = mapped_column(Integer, default=0)       # init packet junk size
-    s2: Mapped[int] = mapped_column(Integer, default=0)       # response packet junk size
+    jc: Mapped[int] = mapped_column(Integer, default=11)      # junk packet count
+    jmin: Mapped[int] = mapped_column(Integer, default=545)   # junk packet min size
+    jmax: Mapped[int] = mapped_column(Integer, default=896)   # junk packet max size
+    s1: Mapped[int] = mapped_column(Integer, default=90)      # padding init message
+    s2: Mapped[int] = mapped_column(Integer, default=70)      # padding response message
+    s3: Mapped[int] = mapped_column(Integer, default=50)      # padding cookie message
+    s4: Mapped[int] = mapped_column(Integer, default=15)      # padding transport messages
     # H1-H4 are magic headers. AmneziaWG 2.0 accepts either a single uint32 value
     # ("1234") or a range ("123-456"). Stored as strings to support both. They
-    # must be large, UNIQUE, non-overlapping; small/overlapping values break the
-    # handshake (client hangs on "Connecting...").
-    h1: Mapped[str] = mapped_column(String(32), default="1148506570")  # init message
-    h2: Mapped[str] = mapped_column(String(32), default="1820040150")  # response message
-    h3: Mapped[str] = mapped_column(String(32), default="1377490607")  # cookie message
-    h4: Mapped[str] = mapped_column(String(32), default="1973755675")  # transport message
+    # must be UNIQUE and non-overlapping; small values (2392, 1324...) are fine.
+    h1: Mapped[str] = mapped_column(String(32), default="2392")  # init message
+    h2: Mapped[str] = mapped_column(String(32), default="1324")  # response message
+    h3: Mapped[str] = mapped_column(String(32), default="4123")  # cookie message
+    h4: Mapped[str] = mapped_column(String(32), default="1232")  # transport message
 
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)

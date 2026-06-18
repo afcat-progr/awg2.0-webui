@@ -36,7 +36,7 @@ def create_server(db: Session, data: ServerCreate) -> Server:
         endpoint_host=data.endpoint_host,
         wan_interface=data.wan_interface,
         jc=data.jc, jmin=data.jmin, jmax=data.jmax,
-        s1=data.s1, s2=data.s2,
+        s1=data.s1, s2=data.s2, s3=data.s3, s4=data.s4,
         h1=data.h1, h2=data.h2, h3=data.h3, h4=data.h4,
     )
     db.add(server)
@@ -49,7 +49,7 @@ def create_server(db: Session, data: ServerCreate) -> Server:
 def update_server(db: Session, server: Server, data: ServerUpdate) -> Server:
     for field in (
         "description", "address", "listen_port", "dns", "mtu", "endpoint_host",
-        "wan_interface", "jc", "jmin", "jmax", "s1", "s2", "h1", "h2", "h3", "h4",
+        "wan_interface", "jc", "jmin", "jmax", "s1", "s2", "s3", "s4", "h1", "h2", "h3", "h4",
         "enabled",
     ):
         setattr(server, field, getattr(data, field))

@@ -63,38 +63,39 @@
     <div class="hint" style="margin-bottom:14px;">
       Эти параметры маскируют трафик. На клиенте они должны совпадать с сервером —
       панель пропишет их в каждый конфиг автоматически.<br>
-      ⚠️ <b>H1–H4</b> — magic headers AmneziaWG 2.0. Можно одно число
-      (<code>1148506570</code>) или диапазон (<code>1000000-2000000</code>).
-      <b>Значения должны быть БОЛЬШИМИ</b> (268435456…2147483647) и
-      <b>не пересекаться</b>. Маленькие (123, 333…) AmneziaWG искажает →
-      handshake ломается, клиент виснет на «Connecting…».
-      <b>Лучше просто нажми кнопку:</b>
+      <b>S1–S4</b> — padding сообщений (init / response / cookie / transport).
+      <b>H1–H4</b> — magic headers: одно число (<code>2392</code>) или диапазон
+      (<code>123-456</code>), 5…4294967295, <b>не должны пересекаться</b> между собой.
       <button type="button" class="btn small" style="margin-top:8px;" onclick="randomHeaders()">🎲 Сгенерировать H1–H4</button>
     </div>
     <div class="row3">
-      <div class="field"><label>Jc (кол-во junk-пакетов)</label><input name="jc" type="number" min="1" value="{{ val('jc', '4') }}"></div>
-      <div class="field"><label>Jmin</label><input name="jmin" type="number" min="0" value="{{ val('jmin', '40') }}"></div>
-      <div class="field"><label>Jmax</label><input name="jmax" type="number" min="1" value="{{ val('jmax', '70') }}"></div>
+      <div class="field"><label>Jc (кол-во junk-пакетов)</label><input name="jc" type="number" min="1" value="{{ val('jc', '11') }}"></div>
+      <div class="field"><label>Jmin</label><input name="jmin" type="number" min="0" value="{{ val('jmin', '545') }}"></div>
+      <div class="field"><label>Jmax</label><input name="jmax" type="number" min="1" value="{{ val('jmax', '896') }}"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>S1 (init junk size)</label><input name="s1" type="number" min="0" max="1132" value="{{ val('s1', '0') }}"></div>
-      <div class="field"><label>S2 (response junk size)</label><input name="s2" type="number" min="0" max="1188" value="{{ val('s2', '0') }}"><div class="hint">S1 + 56 ≠ S2</div></div>
+      <div class="field"><label>S1 (padding init)</label><input name="s1" type="number" min="0" max="1280" value="{{ val('s1', '90') }}"></div>
+      <div class="field"><label>S2 (padding response)</label><input name="s2" type="number" min="0" max="1280" value="{{ val('s2', '70') }}"><div class="hint">S1 + 56 ≠ S2</div></div>
     </div>
     <div class="row2">
-      <div class="field"><label>H1 (init message)</label><input name="h1" type="text" pattern="\d+(-\d+)?" value="{{ val('h1', '1148506570') }}"></div>
-      <div class="field"><label>H2 (response message)</label><input name="h2" type="text" pattern="\d+(-\d+)?" value="{{ val('h2', '1820040150') }}"></div>
+      <div class="field"><label>S3 (padding cookie)</label><input name="s3" type="number" min="0" max="1280" value="{{ val('s3', '50') }}"></div>
+      <div class="field"><label>S4 (padding transport)</label><input name="s4" type="number" min="0" max="1280" value="{{ val('s4', '15') }}"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>H3 (cookie message)</label><input name="h3" type="text" pattern="\d+(-\d+)?" value="{{ val('h3', '1377490607') }}"></div>
-      <div class="field"><label>H4 (transport message)</label><input name="h4" type="text" pattern="\d+(-\d+)?" value="{{ val('h4', '1973755675') }}"></div>
+      <div class="field"><label>H1 (init message)</label><input name="h1" type="text" pattern="\d+(-\d+)?" value="{{ val('h1', '2392') }}"></div>
+      <div class="field"><label>H2 (response message)</label><input name="h2" type="text" pattern="\d+(-\d+)?" value="{{ val('h2', '1324') }}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>H3 (cookie message)</label><input name="h3" type="text" pattern="\d+(-\d+)?" value="{{ val('h3', '4123') }}"></div>
+      <div class="field"><label>H4 (transport message)</label><input name="h4" type="text" pattern="\d+(-\d+)?" value="{{ val('h4', '1232') }}"></div>
     </div>
   </fieldset>
 
   <script>
   function randomHeaders() {
-    // Generate 4 non-overlapping single values in the LARGE range AmneziaWG
-    // requires (>= 2^28). Must match _HEADER_MIN in schemas.py.
-    const MIN = 500000000, MAX = 2147483000;
+    // Generate 4 non-overlapping single uint32 values (>= 5). No "must be large"
+    // requirement — small values work fine. Must match validation in schemas.py.
+    const MIN = 5, MAX = 4294967295;
     const vals = [];
     while (vals.length < 4) {
       const v = Math.floor(Math.random() * (MAX - MIN) + MIN);

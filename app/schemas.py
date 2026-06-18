@@ -7,13 +7,12 @@ _IFACE_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_-]{0,14}$")
 
 # A magic header: either a single uint32 ("1234") or a range ("123-456").
 _HEADER_RE = re.compile(r"^\s*(\d+)\s*(?:-\s*(\d+)\s*)?$")
-_U32_MAX = 2147483647  # AmneziaWG uses values up to 2^31-1
-# Magic headers MUST be large. Types 1-4 are reserved by WireGuard, and small
-# values are silently mangled by awg-quick (e.g. 333 -> 3355443), which makes
-# the client config disagree with the running interface and breaks the
-# handshake. AmneziaWG itself generates headers in the 0x10000000..0x7FFFFFFF
-# range, so we require a large minimum.
-_HEADER_MIN = 268435456  # 2^28
+_U32_MAX = 4294967295  # uint32 max (2^32-1)
+# Types 1-4 are reserved by WireGuard, so headers must be >= 5. There is NO
+# upper "must be large" requirement — small values like 2392 work fine
+# (confirmed by real-world configs). We only enforce format, uint32 range,
+# and that the four headers do not overlap each other.
+_HEADER_MIN = 5
 
 
 def _header_bounds(value: str) -> tuple[int, int]:
@@ -23,17 +22,13 @@ def _header_bounds(value: str) -> tuple[int, int]:
     """
     m = _HEADER_RE.match(value or "")
     if not m:
-        raise ValueError(f"Неверный формат заголовка «{value}». Используйте число (например 1148506570) или диапазон (1000000-2000000).")
+        raise ValueError(f"Неверный формат заголовка «{value}». Используйте число (1234) или диапазон (123-456).")
     low = int(m.group(1))
     high = int(m.group(2)) if m.group(2) is not None else low
     if low > high:
         raise ValueError(f"В диапазоне «{value}» левая граница больше правой.")
     if low < _HEADER_MIN or high > _U32_MAX:
-        raise ValueError(
-            f"H1–H4 должны быть большими: {_HEADER_MIN}…{_U32_MAX}. "
-            f"Маленькие значения (123, 333…) AmneziaWG искажает и handshake ломается. "
-            f"Получено «{value}». Нажмите «Сгенерировать H1–H4»."
-        )
+        raise ValueError(f"Значения H1–H4 должны быть в диапазоне {_HEADER_MIN}…{_U32_MAX} (получено «{value}»).")
     return low, high
 
 
@@ -47,19 +42,21 @@ class ServerCreate(BaseModel):
     endpoint_host: str = ""
     wan_interface: str = "eth0"
 
-    # AWG obfuscation.
-    jc: int = Field(4, ge=1, le=128)
-    jmin: int = Field(40, ge=0, le=1280)
-    jmax: int = Field(70, ge=1, le=1280)
-    s1: int = Field(0, ge=0, le=1132)
-    s2: int = Field(0, ge=0, le=1188)
+    # AWG obfuscation. Defaults follow a known-good real-world config.
+    jc: int = Field(11, ge=1, le=128)        # junk packet count
+    jmin: int = Field(545, ge=0, le=1280)    # junk packet min size
+    jmax: int = Field(896, ge=1, le=1280)    # junk packet max size
+    s1: int = Field(90, ge=0, le=1280)       # padding of handshake init message
+    s2: int = Field(70, ge=0, le=1280)       # padding of handshake response message
+    s3: int = Field(50, ge=0, le=1280)       # padding of handshake cookie message
+    s4: int = Field(15, ge=0, le=1280)       # padding of transport messages
     # H1-H4 are magic headers. AmneziaWG 2.0 accepts a single uint32 ("1234")
-    # or a range ("123-456"). They must be large, UNIQUE and NON-OVERLAPPING;
-    # otherwise the handshake fails (client hangs on "Connecting...").
-    h1: str = Field("1148506570")  # init message
-    h2: str = Field("1820040150")  # response message
-    h3: str = Field("1377490607")  # cookie message
-    h4: str = Field("1973755675")  # transport message
+    # or a range ("123-456"). They must be UNIQUE and NON-OVERLAPPING; small
+    # values are fine. They MUST be identical on client and server.
+    h1: str = Field("2392")  # init message
+    h2: str = Field("1324")  # response message
+    h3: str = Field("4123")  # cookie message
+    h4: str = Field("1232")  # transport message
 
     @field_validator("name")
     @classmethod
