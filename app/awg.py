@@ -194,7 +194,17 @@ def write_config(server: Server) -> Path:
 
 
 def apply_server(server: Server) -> tuple[bool, str]:
-    """Write config and (re)start the interface."""
+    """Write config and (re)start the interface.
+
+    We always do a full `awg-quick down` + `up` rather than `syncconf`.
+    Obfuscation parameters (Jc, S1-S4, H1-H4) can ONLY be set when the
+    interface is created — `awg syncconf` does not update them, and
+    `awg-quick strip` removes them from the config. Using syncconf therefore
+    silently leaves the live interface with stale obfuscation, which makes the
+    client config disagree with the running interface and breaks the handshake.
+    A full down+up is a brief (~1s) blip for existing peers but guarantees the
+    obfuscation actually matches what clients are given.
+    """
     write_config(server)
     if not settings.apply_to_system:
         return True, "Config written (apply_to_system disabled)."
@@ -204,19 +214,12 @@ def apply_server(server: Server) -> tuple[bool, str]:
 
     conf = str(config_path(server))
 
-    # If already up, hot-reload with syncconf; otherwise bring it up.
+    # Tear the interface down if it exists (ignore errors if it's not up).
     is_up, _ = _run([settings.wg_bin, "show", server.name])
     if is_up:
-        ok, msg = _run([settings.wg_quick_bin, "strip", conf])
-        # strip prints a stripped config to stdout; feed it to syncconf via a temp file
-        if ok:
-            strip_path = config_path(server).with_suffix(".stripped")
-            strip_path.write_text(msg + "\n")
-            ok, sync = _run([settings.wg_bin, "syncconf", server.name, str(strip_path)])
-            strip_path.unlink(missing_ok=True)
-            return ok, sync or "synced"
-        return ok, msg
-    # Pass full path so awg-quick doesn't need /etc/wireguard/ lookup.
+        _run([settings.wg_quick_bin, "down", conf])
+
+    # Bring it up fresh so obfuscation is applied from scratch.
     return _run([settings.wg_quick_bin, "up", conf])
 
 
