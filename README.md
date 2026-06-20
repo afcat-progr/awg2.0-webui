@@ -47,32 +47,6 @@ SSH-туннель.
 > «plain WireGuard» (fallback `wg`/`wg-quick`) — обфускация работать не будет.
 > Для AWG 2.0 ставьте `amneziawg` на хост и используйте `docker-compose.override.yml`.
 
-### ⚠️ Клиент подключается, но нет интернета / висит на «Connecting…»
-
-Самая частая причина — **рассинхрон версий модуля ядра и userspace-инструментов**
-AmneziaWG. PPA Amnezia иногда выкладывает модуль (`amneziawg-dkms`) старее, чем
-`amneziawg-tools`. Они по-разному кодируют обфускацию (junk, S1–S4, H1–H4) →
-handshake молча не проходит, даже локально.
-
-**Признаки:** пакеты от клиента доходят (`tcpdump` видит UDP на порт), но в
-`awg show` у пира нет `latest handshake`, а `transfer` = `0 B received`.
-
-**Лечится пересборкой модуля из исходников под текущее ядро:**
-```bash
-sudo bash install-module.sh        # из этого репозитория
-docker compose restart awg-webui
-```
-Скрипт ставит заголовки ядра, собирает модуль из официального GitHub Amnezia,
-заменяет старый, перезагружает его и закрепляет пакет (`apt-mark hold`), чтобы
-`apt upgrade` не вернул старую версию. Безопасно перезапускать после обновления
-ядра.
-
-Проверка после: подними сервер и убедись, что версии совпали, а handshake идёт:
-```bash
-modinfo amneziawg | grep version
-awg --version
-docker exec awg-webui awg show awg0   # у пира должен появиться latest handshake
-```
 
 ## Запуск
 
@@ -121,15 +95,6 @@ ssh -L 8080:localhost:8080 root@<IP_сервера>
 | `WG_BIN` / `WG_QUICK_BIN` | бинарники (`awg`/`awg-quick` или `wg`/`wg-quick`) | `awg` / `awg-quick` |
 | `APPLY_TO_SYSTEM` | `1` — применять к системе, `0` — dry-run (только БД/файлы) | `1` |
 
-## Разработка (без AWG, на любой ОС)
-
-```bash
-python -m venv .venv && . .venv/Scripts/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-# Dry-run, без обращения к системе:
-APPLY_TO_SYSTEM=0 AWG_CONFIG_DIR=./_cfg DATABASE_URL=sqlite:///./dev.db \
-  SECRET_KEY=dev uvicorn app.main:app --reload --port 8080
-```
 
 ## Структура
 
